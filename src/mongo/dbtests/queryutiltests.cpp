@@ -1750,6 +1750,7 @@ namespace QueryUtilTests {
                 // with range 'a.b', hence 'false' expected.
                 ASSERT( !rangesRepresented( BSON( "a.b" << 1 << "a.c" << 1 ), false,
                                             BSON( "a.b" << 2 << "a.c" << 3 ) ) );
+<<<<<<< HEAD
                 // TokuMX: Determine if $elemMatch operators are hanlded different in 2.2
                 //         vs 2.4, because this test fails and it's not clear why. I think
                 //         returning false instead of true is a 'benign' bug (performance-only bug).
@@ -1761,6 +1762,12 @@ namespace QueryUtilTests {
                                            BSON( "a" << BSON( "$elemMatch" <<
                                                               BSON( "b" << 2 << "c" << 3 ) ) ) ) );
                 */
+=======
+                // Compound multikey index without conflicts due to use of the $elemMatch operator.
+                ASSERT( rangesRepresented( BSON( "a.b" << 1 << "a.c" << 1 ), false,
+                                           BSON( "a" << BSON( "$elemMatch" <<
+                                                              BSON( "b" << 2 << "c" << 3 ) ) ) ) );
+>>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
                 // Single key index.
                 ASSERT( rangesRepresented( BSON( "a.b" << 1 << "a.c" << 1 ), true,
                                            BSON( "a.b" << 2 << "a.c" << 3 ) ) );
@@ -1768,7 +1775,12 @@ namespace QueryUtilTests {
         private:
             bool rangesRepresented( const BSONObj& index, bool singleKey, const BSONObj& query ) {
                 FieldRangeSet fieldRangeSet( "", query, singleKey, true );
+<<<<<<< HEAD
                 FieldRangeVector fieldRangeVector( fieldRangeSet, index, 1 );
+=======
+                IndexSpec indexSpec( index );
+                FieldRangeVector fieldRangeVector( fieldRangeSet, indexSpec, 1 );
+>>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
                 return fieldRangeVector.hasAllIndexedRanges();
             }
         };

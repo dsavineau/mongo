@@ -653,12 +653,22 @@ namespace mongo {
 
         const bool tailable = pq.hasOption( QueryOption_CursorTailable ) && pq.getNumToReturn() != 1;
         
+<<<<<<< HEAD
         LOG(1) << "query beginning read-only transaction. tailable: " << tailable << endl;
         
         BSONObj oldPlan;
         if (getCachedExplainPlan) {
             scoped_ptr<MultiPlanScanner> mps( MultiPlanScanner::make( ns.c_str(), query, order ) );
             oldPlan = mps->cachedPlanExplainSummary();
+=======
+        if ( pq.hasOption( QueryOption_OplogReplay ) ) {
+            cursor = FindingStartCursor::getCursor( ns.c_str(), query, order );
+        }
+        else {
+            cursor =
+                NamespaceDetailsTransient::getCursor( ns.c_str(), query, order, QueryPlanSelectionPolicy::any(),
+                                                      true, pq_shared, false, &queryPlan );
+>>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
         }
         
         cursor = getOptimizedCursor( ns.c_str(), query, order, QueryPlanSelectionPolicy::any(),

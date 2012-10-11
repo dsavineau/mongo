@@ -210,7 +210,11 @@ doneCheckOrder:
         if ( !_scanAndOrderRequired &&
                 ( optimalIndexedQueryCount == _frs.numNonUniversalRanges() ) )
             _utility = Optimal;
+<<<<<<< HEAD
         _frv.reset( new FieldRangeVector( _frs, idxKey, _direction ) );
+=======
+        _frv.reset( new FieldRangeVector( _frs, idxSpec, _direction ) );
+>>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
 
         if ( // If all field range constraints are on indexed fields and ...
              _utility == Optimal &&
