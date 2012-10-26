@@ -120,6 +120,7 @@ namespace mongo {
             }
         } flushRouterConfigCmd;
 
+<<<<<<< HEAD
 
         class ServerStatusCmd : public WebInformationCommand {
         public:
@@ -222,6 +223,8 @@ namespace mongo {
             time_t _started;
         } cmdServerStatus;
 
+=======
+>>>>>>> b56566b... rewrite sererStatus caommands to be modular
         class FsyncCommand : public GridAdminCmd {
         public:
             FsyncCommand() : GridAdminCmd( "fsync" ) {}

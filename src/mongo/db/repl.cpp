@@ -51,6 +51,7 @@
 #include "repl/connections.h"
 #include "ops/update.h"
 #include "pcrecpp.h"
+#include "mongo/db/commands/server_status.h"
 #include "mongo/db/instance.h"
 #include "mongo/db/queryutil.h"
 #include "mongo/db/server_parameters.h"
@@ -84,20 +85,20 @@ namespace mongo {
 
     bool replAuthenticate(DBClientBase *conn);
 
-    void appendReplicationInfo(BSONObjBuilder& result, int level) {
+    void appendReplicationInfo( BSONObjBuilder& result , bool userIsAdmin , int level ) {
         if ( replSet ) {
             if( theReplSet == 0 || theReplSet->state().shunned() ) {
                 result.append("ismaster", false);
                 result.append("secondary", false);
                 result.append("info", ReplSet::startupStatusMsg.get());
                 result.append( "isreplicaset" , true );
-                return;
             }
-
-            theReplSet->fillIsMaster(result);
+            else {
+                theReplSet->fillIsMaster(result);
+            }
             return;
         }
-
+        
         if ( replAllDead ) {
             result.append("ismaster", 0);
             string s = string("dead: ") + replAllDead;
@@ -106,7 +107,83 @@ namespace mongo {
         else {
             result.appendBool("ismaster", _isMaster() );
         }
+        
+        if ( level && replSet ) {
+            result.append( "info" , "is replica set" );
+        }
+        else if ( level ) {
+            BSONObjBuilder sources( result.subarrayStart( "sources" ) );
+            
+            int n = 0;
+            list<BSONObj> src;
+            {
+                Client::ReadContext ctx( "local.sources", dbpath, userIsAdmin );
+                shared_ptr<Cursor> c = findTableScan("local.sources", BSONObj());
+                while ( c->ok() ) {
+                    src.push_back(c->current());
+                    c->advance();
+                }
+            }
+            
+            for( list<BSONObj>::const_iterator i = src.begin(); i != src.end(); i++ ) {
+                BSONObj s = *i;
+                BSONObjBuilder bb;
+                bb.append( s["host"] );
+                string sourcename = s["source"].valuestr();
+                if ( sourcename != "main" )
+                    bb.append( s["source"] );
+                {
+                    BSONElement e = s["syncedTo"];
+                    BSONObjBuilder t( bb.subobjStart( "syncedTo" ) );
+                    t.appendDate( "time" , e.timestampTime() );
+                    t.append( "inc" , e.timestampInc() );
+                    t.done();
+                }
+                
+                if ( level > 1 ) {
+                    wassert( !Lock::isLocked() );
+                    // note: there is no so-style timeout on this connection; perhaps we should have one.
+                    scoped_ptr<ScopedDbConnection> conn( ScopedDbConnection::getInternalScopedDbConnection( s["host"].valuestr() ) );
+                    
+                    DBClientConnection *cliConn = dynamic_cast< DBClientConnection* >( &conn->conn() );
+                    if ( cliConn && replAuthenticate( cliConn ) ) {
+                        BSONObj first = conn->get()->findOne( (string)"local.oplog.$" + sourcename,
+                                                              Query().sort( BSON( "$natural" << 1 ) ) );
+                        BSONObj last = conn->get()->findOne( (string)"local.oplog.$" + sourcename,
+                                                             Query().sort( BSON( "$natural" << -1 ) ) );
+                        bb.appendDate( "masterFirst" , first["ts"].timestampTime() );
+                        bb.appendDate( "masterLast" , last["ts"].timestampTime() );
+                        double lag = (double) (last["ts"].timestampTime() - s["syncedTo"].timestampTime());
+                        bb.append( "lagSeconds" , lag / 1000 );
+                    }
+                    conn->done();
+                }
+                
+                sources.append( BSONObjBuilder::numStr( n++ ) , bb.obj() );
+            }
+            
+            sources.done();
+        }
     }
+    
+    class ReplicationInfoServerStatus : public ServerStatusSection {
+    public:
+        ReplicationInfoServerStatus() : ServerStatusSection( "repl" ){}
+        bool includeByDefault() const { return true; }
+        bool adminOnly() const { return false; }
+        
+        BSONObj generateSection( const BSONElement& configElement, bool userIsAdmin ) const {
+            if ( ! anyReplEnabled() )
+                return BSONObj();
+            
+            int level = configElement.numberInt();
+            
+            BSONObjBuilder result;
+            appendReplicationInfo( result, userIsAdmin, level );
+            return result.obj();
+        }
+    } replicationInfoServerStatus;
+
 
     class CmdIsMaster : public Command {
     public:
@@ -132,7 +209,8 @@ namespace mongo {
             /* currently request to arbiter is (somewhat arbitrarily) an ismaster request that is not
                authenticated.
             */
-            appendReplicationInfo(result, 0);
+            bool authed = cc().getAuthenticationInfo()->isAuthorizedReads("admin");
+            appendReplicationInfo( result , authed , 0 );
 
             result.appendNumber("maxBsonObjectSize", BSONObjMaxUserSize);
             result.appendNumber("maxMessageSizeBytes", MaxMessageSizeBytes);
@@ -215,4 +293,7 @@ namespace mongo {
                     theReplSet && theReplSet->isSecondary() );
         }
     }
+
+    OpCounterServerStatusSection replOpCounterServerStatusSection( "opcountersRepl", &replOpCounters );
+
 } // namespace mongo
