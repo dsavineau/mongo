@@ -17,18 +17,22 @@
  *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pch.h"
-#include "query.h"
-#include "../clientcursor.h"
-#include "../oplog.h"
-#include "../../bson/util/builder.h"
-#include "../replutil.h"
-#include "../scanandorder.h"
-#include "../commands.h"
-#include "../queryoptimizer.h"
-#include "../../s/d_logic.h"
-#include "../../server.h"
-#include "../queryoptimizercursor.h"
+#include "mongo/pch.h"
+
+#include "mongo/db/ops/query.h"
+
+#include "mongo/bson/util/builder.h"
+#include "mongo/db/clientcursor.h"
+#include "mongo/db/commands.h"
+#include "mongo/db/oplog.h"
+#include "mongo/db/queryoptimizer.h"
+#include "mongo/db/queryoptimizercursor.h"
+#include "mongo/db/replutil.h"
+#include "mongo/db/scanandorder.h"
+#include "mongo/s/d_logic.h"
+#include "mongo/s/util.h"  // for SendStaleConfigException
+#include "mongo/server.h"
+#include "mongo/util/fail_point_service.h"
 
 namespace mongo {
 
@@ -36,6 +40,8 @@ namespace mongo {
        a little bit more than this, it is a threshold rather than a limit.
     */
     const int MaxBytesToReturnToClientAtOnce = 4 * 1024 * 1024;
+
+    MONGO_FP_DECLARE(getMoreError);
 
     bool runCommands(const char *ns, BSONObj& jsobj, CurOp& curop, BufBuilder &b, BSONObjBuilder& anObjBuilder, bool fromRepl, int queryOptions) {
         try {
@@ -101,6 +107,10 @@ namespace mongo {
             // check for spoofing of the ns such that it does not match the one originally there for the cursor
             uassert(14833, "auth error", str::equals(ns, client_cursor->ns().c_str()));
             uassert(16784, "oplog cursor reading data that is too old", !client_cursor->lastOpForSlaveTooOld());
+
+            // This must be done after auth check to ensure proper cleanup.
+            uassert(16951, "failing getmore due to set failpoint",
+                    !MONGO_FAIL_POINT(getMoreError));
 
             int queryOptions = client_cursor->queryOptions();
             OpSettings settings;
