@@ -40,6 +40,7 @@
 #include "mongo/db/storage/key.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/util/stacktrace.h"
 
 namespace mongo {
 
@@ -611,6 +612,7 @@ namespace mongo {
         }
 
         void handle_ydb_error(int error) {
+		  printStackTrace();
             switch (error) {
                 case ENOENT:
                     throw SystemException::Enoent();
@@ -637,6 +639,7 @@ namespace mongo {
                 case DB_KEYEXIST:
                     throw UserException(ASSERT_ID_DUPKEY, "E11000 duplicate key error.");
                 case DB_NOTFOUND:
+		  printStackTrace();
                     throw UserException(16761, "Index key not found.");
                 case DB_RUNRECOVERY:
                     throw DataCorruptionException(16762, "Automatic environment recovery failed.");
