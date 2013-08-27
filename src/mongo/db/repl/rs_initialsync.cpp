@@ -290,6 +290,7 @@ namespace mongo {
         isyncassert("could not get last oplog entry after clone", ret);
         
         GTID currEntry = minLiveGTID;
+        log() << "last entry is before _fillGaps is " << lastEntry.toString() << endl;
         // first, we need to fill in the "gaps" in the oplog
         while (GTID::cmp(currEntry, lastEntry) < 0) {
             r->tailingQueryGTE(rsoplog, currEntry);
