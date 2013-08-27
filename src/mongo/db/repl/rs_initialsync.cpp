@@ -307,6 +307,7 @@ namespace mongo {
                 // already exist
                 if (!gtidExistsInOplog(currEntry)) {
                     bool bigTxn;
+                    log() << "replicating " << op.toString(false, true) << " to oplog" << endl;
                     replicateFullTransactionToOplog(op, *r, &bigTxn);
                 }
             }
@@ -351,9 +352,10 @@ namespace mongo {
                 shared_ptr<Cursor> c = getOptimizedCursor(rsoplog, query.done());
                 while( c->ok() ) {
                     if ( c->currentMatches()) {
-                        BSONObj curr = c->current();                    
+                        BSONObj curr = c->current();
                         bool transactionAlreadyApplied = curr["a"].Bool();
                         if (!transactionAlreadyApplied) {
+                            log() << "pushing " << curr.toString(false, true) << " to deque" << endl;
                             unappliedTransactions.push_back(curr.getOwned());
                         }
                     }
@@ -364,6 +366,7 @@ namespace mongo {
         }
         while (unappliedTransactions.size() > 0) {
             BSONObj curr = unappliedTransactions.front();
+            log() << "applying " << curr.toString(false, true) << " to oplog" << endl;
             applyTransactionFromOplog(curr);            
             unappliedTransactions.pop_front();
         }
