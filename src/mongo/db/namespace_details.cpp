@@ -1207,6 +1207,7 @@ namespace mongo {
                                         &src_key, &src_val,
                                         n, dbs, key_dbt_arrays, del_flags);
         if (r != 0) {
+            log() << "******************8failed to delete " << pk.toString(false, true) << " , " << obj.toString(false, true) << endl;
             storage::handle_ydb_error(r);
         }
     }
