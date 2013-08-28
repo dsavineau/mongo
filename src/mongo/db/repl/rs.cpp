@@ -1123,7 +1123,7 @@ namespace mongo {
                                 // if we are not deleting anything in this loop.
                                 // If we are deleting even just one entry,
                                 // we do not sleep.
-                                if (docs.size() == 0) {
+                                if (docs.empty()) {
                                     // set the time to way to be 1 second longer
                                     // than when the next entry expires, so that
                                     // when we wake up, we can hopefully
@@ -1142,19 +1142,16 @@ namespace mongo {
                         }
                     }
 
-                    if (docs.size() > 0) {
+                    if (!docs.empty()) {
                         // we are deleting something, so let's not sleep
                         millisToWait = 0;
-                        for (uint32_t i = 0; i < docs.size(); i++) {
-                            BSONObj curr = docs[i];
-                            // only set _lastPurgedGTID once we get are about
-                            // to delete the last entry
-                            if (i == (docs.size() - 1)) {
-                                boost::unique_lock<boost::mutex> lock(_purgeMutex);
-                                _lastPurgedGTID = getGTIDFromBSON("_id", curr);
-                            }
+                        for (vector<BSONObj>::const_iterator it = docs.begin(); it != docs.end(); ++it) {
                             // delete the row
-                            purgeEntryFromOplog(curr);                            
+                            purgeEntryFromOplog(*it);                            
+                        }
+                        {
+                            boost::unique_lock<boost::mutex> lock(_purgeMutex);
+                            _lastPurgedGTID = getGTIDFromBSON("_id", docs.back());
                         }
                     }
                     transaction.commit(DB_TXN_NOSYNC);
