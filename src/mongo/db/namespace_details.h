@@ -529,9 +529,7 @@ namespace mongo {
                 }
             }
 
-            // The ns doesn't exist, or it's not opened. Grab an exclusive lock
-            // and do the open if we still can't find it.
-            SimpleMutex::scoped_lock lk(_initLock);
+            // The ns doesn't exist, or it's not opened.
             NamespaceDetails *d = NULL;
             {
                 SimpleRWLock::Exclusive lk(_openRWLock);

@@ -189,8 +189,7 @@ namespace mongo {
         return 0;
     }
 
-    // on input, _initLock is held, so this can be called by only one thread at a time,
-    // also, on input, the NamespaceIndex must be allocated
+    // on input, the NamespaceIndex must be allocated
     NamespaceDetails *NamespaceIndex::open_ns(const StringData& ns, const bool bulkLoad) {
         verify(allocated());
         BSONObj serialized;
@@ -198,7 +197,9 @@ namespace mongo {
         storage::Key sKey(nsobj, NULL);
         DBT ndbt = sKey.dbt();
         DB_TXN *db_txn = cc().hasTxn() ? cc().txn().db_txn() : NULL;
-        int r = _nsdb->getf_set(_nsdb, db_txn, 0, &ndbt, getf_serialized, &serialized);
+        // This getf_set call with DB_SERIALIZABLE | DB_RMW ensures
+        // that only one thread will call NamespaceDetails::make at a time
+        int r = _nsdb->getf_set(_nsdb, db_txn, DB_SERIALIZABLE | DB_RMW, &ndbt, getf_serialized, &serialized);
         if (r == 0) {
             shared_ptr<NamespaceDetails> details = NamespaceDetails::make( serialized, bulkLoad );
             {
