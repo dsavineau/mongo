@@ -50,7 +50,6 @@ namespace mongo {
             limit  = -limit;
         }
 
-<<<<<<< HEAD
         OpSettings settings;
         settings.setBulkFetch(true);
         settings.setQueryCursorMode(DEFAULT_LOCK_CURSOR);
@@ -67,35 +66,6 @@ namespace mongo {
                                         false /* requestMatcher */ );
             for ( ; cursor->ok() ; cursor->advance() ) {
                 if ( cursor->currentMatches() && !cursor->getsetdup( cursor->currPK() ) ) {
-=======
-        shared_ptr<Cursor> cursor =
-                NamespaceDetailsTransient::getCursor( ns,
-                                                      query,
-                                                      BSONObj(),
-                                                      QueryPlanSelectionPolicy::any(),
-                                                      // Avoid using a Matcher when a Cursor can
-                                                      // exactly match the query using a
-                                                      // FieldRangeVector.  See SERVER-1752.
-                                                      false /* requestMatcher */ );
-        ClientCursor::Holder ccPointer;
-        ElapsedTracker timeToStartYielding( 256, 20 );
-        try {
-            while( cursor->ok() ) {
-                if ( !ccPointer ) {
-                    if ( timeToStartYielding.intervalHasElapsed() ) {
-                        // Lazily construct a ClientCursor, avoiding a performance regression when scanning a very
-                        // small number of documents.
-                        ccPointer.reset( new ClientCursor( QueryOption_NoCursorTimeout, cursor, ns ) );
-                    }
-                }
-                else if ( !ccPointer->yieldSometimes( ClientCursor::MaybeCovered ) ||
-                         !cursor->ok() ) {
-                    break;
-                }
-                
-                if ( cursor->currentMatches() && !cursor->getsetdup( cursor->currLoc() ) ) {
-                    
->>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
                     if ( skip > 0 ) {
                         --skip;
                     }

@@ -527,7 +527,6 @@ namespace mongo {
         return shared_ptr<Cursor>();
     }
     
-<<<<<<< HEAD
     shared_ptr<Cursor> getOptimizedCursor( const StringData &ns,
                                            const BSONObj &query,
                                            const BSONObj &order,
@@ -547,21 +546,6 @@ namespace mongo {
             ret.reset(new DummyCursor(1));
             return ret;
         }
-=======
-    shared_ptr<Cursor>
-    NamespaceDetailsTransient::getCursor( const char *ns,
-                                         const BSONObj &query,
-                                         const BSONObj &order,
-                                         const QueryPlanSelectionPolicy &planPolicy,
-                                         bool requestMatcher,
-                                         const shared_ptr<const ParsedQuery> &parsedQuery,
-                                         bool requireOrder,
-                                         QueryPlanSummary *singlePlanSummary ) {
-
-        CursorGenerator generator( ns, query, order, planPolicy, requestMatcher, parsedQuery,
-                                   requireOrder, singlePlanSummary );
-        return generator.generate();
->>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
     }
     
     CursorGenerator::CursorGenerator( const StringData &ns,
@@ -660,11 +644,7 @@ namespace mongo {
 
             // The query plan must have a matcher.  The matcher's constructor performs some aspects
             // of query validation that should occur before a cursor is returned.
-<<<<<<< HEAD
-            fassert( 16859, singlePlan->matcher() );
-=======
             fassert( 16449, singlePlan->matcher() );
->>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
 
             if ( // If a matcher is requested or ...
                  _requestMatcher ||
