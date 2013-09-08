@@ -436,65 +436,9 @@ namespace mongo {
         // generate an index info BSON for this namespace, with the same options
         BSONObj indexInfo(const BSONObj &keyPattern, bool unique, bool clustering) const;
 
-<<<<<<< HEAD
         // fill the statistics for each index in the NamespaceDetails,
         // indexStats is an array of length nIndexes
         void fillIndexStats(std::vector<IndexStats> &indexStats) const;
-=======
-        /**
-         * @return a cursor interface to the query optimizer.  The implementation may utilize a
-         * single query plan or interleave results from multiple query plans before settling on a
-         * single query plan.  Note that the schema of currKey() documents, indexKeyPattern(), the
-         * matcher(), and the isMultiKey() nature of the cursor may change over the course of
-         * iteration.
-         *
-         * @param query - Query used to select indexes and populate matchers; not copied if unowned
-         * (see bsonobj.h).
-         *
-         * @param order - Required ordering spec for documents produced by this cursor, empty object
-         * default indicates no order requirement.  If no index exists that satisfies the required
-         * sort order, an empty shared_ptr is returned unless parsedQuery is also provided.  This is
-         * not copied if unowned.
-         *
-         * @param planPolicy - A policy for selecting query plans - see queryoptimizercursor.h
-         *
-         * @param requestMatcher - Set to true to request that the returned Cursor provide a
-         * matcher().  If false, the cursor's matcher() may return NULL if the Cursor can perform
-         * accurate query matching internally using a non Matcher mechanism.  One case where a
-         * Matcher might be requested even though not strictly necessary to select matching
-         * documents is if metadata about matches may be requested using MatchDetails.  NOTE This is
-         * a hint that the Cursor use a Matcher, but the hint may be ignored.  In some cases the
-         * returned cursor may not provide a matcher even if 'requestMatcher' is true.
-         *
-         * @param parsedQuery - Additional query parameters, as from a client query request.
-         *
-         * @param requireOrder - If false, the resulting cursor may return results in an order
-         * inconsistent with the @param order spec.  See queryoptimizercursor.h for information on
-         * handling these results properly.
-         *
-         * @param singlePlanSummary - Query plan summary information that may be provided when a
-         * cursor running a single plan is returned.
-         *
-         * The returned cursor may @throw inside of advance() or recoverFromYield() in certain error
-         * cases, for example if a capped overrun occurred during a yield.  This indicates that the
-         * cursor was unable to perform a complete scan.
-         *
-         * This is a work in progress.  Partial list of features not yet implemented through this
-         * interface:
-         * 
-         * - covered indexes
-         * - in memory sorting
-         */
-        static shared_ptr<Cursor> getCursor( const char *ns, const BSONObj &query,
-                                            const BSONObj &order = BSONObj(),
-                                            const QueryPlanSelectionPolicy &planPolicy =
-                                            QueryPlanSelectionPolicy::any(),
-                                            bool requestMatcher = true,
-                                            const shared_ptr<const ParsedQuery> &parsedQuery =
-                                            shared_ptr<const ParsedQuery>(),
-                                            bool requireOrder = true,
-                                            QueryPlanSummary *singlePlanSummary = 0 );
->>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
 
         const string _ns;
         // The options used to create this namespace details. We serialize
