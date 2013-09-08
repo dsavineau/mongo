@@ -2372,7 +2372,11 @@ namespace QueryOptimizerCursorTests {
                 Client::Context ctx( ns() );
                 if ( expectException() ) {
                     ASSERT_THROWS
+<<<<<<< HEAD
                     ( getOptimizedCursor
+=======
+                    ( NamespaceDetailsTransient::getCursor
+>>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
                      ( ns(), query(), order(), planPolicy() ),
                      MsgAssertionException );
                     return;
@@ -2385,7 +2389,11 @@ namespace QueryOptimizerCursorTests {
                     extractedQuery = _query["$query"].Obj();
                 }
                 shared_ptr<Cursor> c =
+<<<<<<< HEAD
                 getOptimizedCursor( ns(), extractedQuery, order(), planPolicy(),
+=======
+                NamespaceDetailsTransient::getCursor( ns(), extractedQuery, order(), planPolicy(),
+>>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
                                                       true, _parsedQuery, false );
                 string type = c->toString().substr( 0, expectedType().length() );
                 ASSERT_EQUALS( expectedType(), type );
@@ -2454,8 +2462,12 @@ namespace QueryOptimizerCursorTests {
                 _cli.ensureIndex( ns(), BSON( "a" << 1 ) );
                 _cli.update( ns(), BSONObj(), BSON( "$set" << BSON( "a" << true ) ) );
             }
+<<<<<<< HEAD
             string expectedType() const { return "IndexCursor a_1"; }
             bool expectSimpleEquality() const { return true; }
+=======
+            string expectedType() const { return "BtreeCursor a_1"; }
+>>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
             BSONObj query() const { return BSON( "a" << true ); }
             virtual void check( const shared_ptr<Cursor> &c ) {
                 ASSERT( c->ok() );
@@ -2852,7 +2864,11 @@ namespace QueryOptimizerCursorTests {
         };
 
         /**
+<<<<<<< HEAD
          * A Cursor returned by getOptimizedCursor() may or may not have a
+=======
+         * A Cursor returned by NamespaceDetailsTransient::getCursor() may or may not have a
+>>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
          * matcher().  A Matcher will generally exist if required to match the provided query or
          * if specifically requested.
          */
@@ -2863,6 +2879,7 @@ namespace QueryOptimizerCursorTests {
                 _cli.ensureIndex( ns(), BSON( "a" << 1 ) );
             }
             void run() {
+<<<<<<< HEAD
                 Client::Transaction transaction(DB_SERIALIZABLE);
                 {
                     // No matcher is set for an empty query.
@@ -2877,12 +2894,28 @@ namespace QueryOptimizerCursorTests {
                     ASSERT( hasMatcher( BSON( "a" << 2 << "b" << 3 ), false ) );
                 }
                 transaction.commit();
+=======
+                // No matcher is set for an empty query.
+                ASSERT( !hasMatcher( BSONObj(), false ) );
+                // No matcher is set for an empty query, even if a matcher is requested.
+                ASSERT( !hasMatcher( BSONObj(), true ) );
+                // No matcher is set for an exact key match indexed query.
+                ASSERT( !hasMatcher( BSON( "a" << 2 ), false ) );
+                // No matcher is set for an exact key match indexed query, unless one is requested.
+                ASSERT( hasMatcher( BSON( "a" << 2 ), true ) );
+                // A matcher is set for a non exact key match indexed query.
+                ASSERT( hasMatcher( BSON( "a" << 2 << "b" << 3 ), false ) );
+>>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
             }
         private:
             bool hasMatcher( const BSONObj& query, bool requestMatcher ) {
                 Client::ReadContext ctx( ns() );
                 shared_ptr<Cursor> cursor =
+<<<<<<< HEAD
                         getOptimizedCursor( ns(),
+=======
+                        NamespaceDetailsTransient::getCursor( ns(),
+>>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
                                                               query,
                                                               BSONObj(),
                                                               QueryPlanSelectionPolicy::any(),
@@ -2899,6 +2932,7 @@ namespace QueryOptimizerCursorTests {
         public:
             void run() {
                 Client::ReadContext ctx( ns() );
+<<<<<<< HEAD
                 Client::Transaction transaction(DB_SERIALIZABLE);
                 {
                     // An assertion is triggered because { a:undefined } is an invalid query, even
@@ -2911,6 +2945,17 @@ namespace QueryOptimizerCursorTests {
                                                                     /* requestMatcher */ false ),
                               UserException );
                 }
+=======
+                // An assertion is triggered because { a:undefined } is an invalid query, even
+                // though no matcher is required.
+                ASSERT_THROWS
+                        ( NamespaceDetailsTransient::getCursor( ns(),
+                                                                fromjson( "{a:undefined}" ),
+                                                                BSONObj(),
+                                                                QueryPlanSelectionPolicy::any(),
+                                                                /* requestMatcher */ false ),
+                          UserException );
+>>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
             }
         };
         
@@ -3580,8 +3625,12 @@ namespace QueryOptimizerCursorTests {
             //add<GetCursor::IdElseNatural::HintedNaturalForQuery>( BSON( "_id" << 1 ) );
             //add<GetCursor::IdElseNatural::HintedNaturalForQuery>( BSON( "a" << 1 ) );
             //add<GetCursor::IdElseNatural::HintedNaturalForQuery>( BSON( "_id" << 1 << "a" << 1 ) );
+<<<<<<< HEAD
             // There's no more $atomic operator, so this test isn't useful anymore.
             //add<GetCursor::MatcherValidation>(); 
+=======
+            add<GetCursor::MatcherValidation>();
+>>>>>>> c0355cc... SERVER-1752 Improve performance of simple counts by avoiding use of a matcher when an optimal btree cursor can filter results internally.
             add<GetCursor::MatcherSet>();
             add<GetCursor::MatcherValidate>();
             add<Explain::ClearRecordedIndex>();
