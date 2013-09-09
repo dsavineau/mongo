@@ -80,7 +80,7 @@ namespace mongo {
 
         class SystemException::Enoent : public SystemException {
           public:
-            Enoent(const bool log = true) : SystemException(ENOENT, 16847, "The collection may have been dropped.") {}
+            Enoent() : SystemException(ENOENT, 16847, "The collection may have been dropped.") {}
             virtual ~Enoent() throw() {}
         };
 
