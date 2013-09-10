@@ -41,6 +41,8 @@ namespace mongo {
 
             int close();
 
+            class NeedsCreate : std::exception {};
+
         private:
             void open(const BSONObj &info,
                       const mongo::Descriptor &descriptor, const bool may_create,

@@ -156,6 +156,9 @@ namespace mongo {
             const int db_flags = may_create ? DB_CREATE : 0;
             r = _db->open(_db, cc().txn().db_txn(), _dname.c_str(), NULL,
                           DB_BTREE, db_flags, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+            if (r == ENOENT && !may_create) {
+                throw NeedsCreate();
+            }
             if (r != 0) {
                 handle_ydb_error(r);
             }

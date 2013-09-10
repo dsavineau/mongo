@@ -20,9 +20,9 @@
 #include "mongo/db/namespace_details.h"
 #include "mongo/db/json.h"
 #include "mongo/db/relock.h"
-#include "mongo/db/storage/key.h"
+#include "mongo/db/storage/dictionary.h"
 #include "mongo/db/storage/env.h"
-#include "mongo/db/storage/exception.h"
+#include "mongo/db/storage/key.h"
 
 #include "mongo/util/stringutils.h"
 
@@ -75,7 +75,7 @@ namespace mongo {
             // Try first without the create flag, because we're not sure if we
             // have a write lock just yet. It won't matter if the nsdb exists.
             _nsdb.reset(new storage::Dictionary(_nsdbFilename, info, descriptor, false, false));
-        } catch (storage::SystemException::Enoent) {
+        } catch (storage::Dictionary::NeedsCreate) {
             if (!may_create) {
                 // didn't find on disk and we can't create it
                 return;
