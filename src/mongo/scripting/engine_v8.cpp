@@ -1555,6 +1555,10 @@ namespace mongo {
             v8ToMongoDBRef(b, elementName, obj);
         } else if (BinDataFT()->HasInstance(value)) {
             v8ToMongoBinData(b, elementName, obj);
+        } else if (TimestampFT()->HasInstance(value)) {
+            OpTime ot (obj->Get(strLitToV8("t"))->Uint32Value(),
+                       obj->Get(strLitToV8("i"))->Uint32Value());
+            b.append(elementName, ot);
         } else if (MinKeyFT()->HasInstance(value)) {
             b.appendMinKey(elementName);
         } else if (MaxKeyFT()->HasInstance(value)) {
