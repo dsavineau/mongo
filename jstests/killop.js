@@ -1,5 +1,3 @@
-for (var i = 0; i<10000; i++) {
-
 t = db.jstests_killop
 t.drop();
 
@@ -10,7 +8,8 @@ function debug( x ) {
 }
 
 t.save( {} );
-db.getLastError();
+assert(!db.getLastError());
+assert.eq(1, t.count());
 
 function ops() {
     p = db.currentOp().inprog;
@@ -46,5 +45,3 @@ s2();
 assert( ( new Date() ) - start < 30000 );
 
 //}
-
-}
