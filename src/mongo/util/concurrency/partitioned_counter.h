@@ -37,7 +37,7 @@ namespace mongo {
      * PartitionedCounter is a number that can be incremented, decremented, and read.
      *
      * It is assumed that increments and decrements are frequent and concurrent, whereas reads are
-     * infrequent.  Therefore, the key is to increments and decrements without involving a memory
+     * infrequent.  Therefore, the key is to do increments and decrements without involving a memory
      * location shared between threads.
      *
      * The original implementation is in ft-index under util/partitioned_counter.{h,cc}.  This is a
@@ -45,7 +45,7 @@ namespace mongo {
      * following differences:
      *
      *   - Signed or unsigned types are supported, because it's templated.
-     *   - Decrement is supported, and if Value is a signed type, decrements check for underflow.
+     *   - Decrement is supported, and if Value is an unsigned type, decrements check for underflow.
      *   - This implementation is sloppier about memory management.  When a thread dies, it does not
      *     clean up the pointer to itself in the owning PartitionedCounter, rather that
      *     PartitionedCounter will notice that the pointer is NULL and lazily clean up.  This is a
