@@ -130,6 +130,8 @@ namespace {
         running = false;
         group.join_all();
         ASSERT_EQUALS(pc, NTHREADS * NINCS);
+        ++pc;
+        ASSERT_EQUALS(pc, NTHREADS * NINCS + 1);
     }
 
 } // namespace
