@@ -153,7 +153,7 @@ namespace {
 
     template<class Counter>
     static unsigned long long timeit(int nthreads) {
-        static const size_t NINCS = 2ULL<<48;
+        static const size_t NINCS = 2ULL<<24;
         const size_t incsPerThread = NINCS / nthreads;
         boost::thread_group group;
         Counter c;
