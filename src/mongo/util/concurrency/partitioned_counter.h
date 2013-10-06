@@ -92,7 +92,7 @@ namespace mongo {
         ThreadState& ts();
 
         Value _sumOfDead;
-        SimpleMutex _mutex;
+        mutable SimpleMutex _mutex;
         ThreadStatePtr _ts;
         mutable list<ThreadStatePtr *> _threadStates;
         typedef typename list<ThreadStatePtr *>::iterator states_iterator;
