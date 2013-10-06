@@ -89,15 +89,14 @@ namespace mongo {
             friend class PartitionedCounter;
         };
         friend class ThreadState;
-        typedef thread_specific_ptr<ThreadState> ThreadStatePtr;
 
         ThreadState& ts();
 
         Value _sumOfDead;
         mutable SimpleMutex _mutex;
-        ThreadStatePtr _ts;
-        mutable list<ThreadStatePtr *> _threadStates;
-        typedef typename list<ThreadStatePtr *>::iterator states_iterator;
+        thread_specific_ptr<ThreadState> _ts;
+        mutable list<ThreadState *> _threadStates;
+        typedef typename list<ThreadState *>::iterator states_iterator;
     };
 
     template<typename Value>
@@ -109,8 +108,7 @@ namespace mongo {
             SimpleMutex::scoped_lock lk(_pc->_mutex);
             _pc->_sumOfDead += _sum;
             for (states_iterator it = _pc->_threadStates.begin(); it != _pc->_threadStates.end(); ++it) {
-                ThreadStatePtr *tspp = *it;
-                if (tspp->get() == this) {
+                if (*it == this) {
                     _pc->_threadStates.erase(it);
                     break;
                 }
@@ -123,16 +121,14 @@ namespace mongo {
 
     template<typename Value>
     PartitionedCounter<Value>::~PartitionedCounter() {
+        // Prevent recursive lock and modification of _threadStates when we destroy all the _ts
+        // objects, we don't care about incrementing _sumOfDead because this pc is dying anyway.
+        //
         // We need this lock to protect against the race between a terminating thread in
         // ~ThreadState, and us.
         SimpleMutex::scoped_lock lk(_mutex);
         for (states_iterator it = _threadStates.begin(); it != _threadStates.end(); ++it) {
-            ThreadStatePtr *tspp = *it;
-            // Prevent recursive lock and modification of _threadStates while we're iterating, we
-            // don't care about incrementing _sumOfDead because this pc is dying anyway, but we do
-            // need to delete all the corresponding ThreadStates.
-            (*tspp)->_pc = NULL;
-            tspp->reset();
+            (*it)->_pc = NULL;
         }
     }
 
@@ -141,8 +137,7 @@ namespace mongo {
         SimpleMutex::scoped_lock lk(_mutex);
         Value sum = _sumOfDead;
         for (states_iterator it = _threadStates.begin(); it != _threadStates.end(); ++it) {
-            ThreadStatePtr *tspp = *it;
-            sum += (*tspp)->_sum;
+            sum += (*it)->_sum;
         }
         return sum;
     }
@@ -152,7 +147,7 @@ namespace mongo {
         if (_ts.get() == NULL) {
             _ts.reset(new ThreadState(this));
             SimpleMutex::scoped_lock lk(_mutex);
-            _threadStates.push_back(&_ts);
+            _threadStates.push_back(_ts.get());
         }
         return *_ts;
     }

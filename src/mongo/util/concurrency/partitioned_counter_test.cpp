@@ -17,6 +17,9 @@
 
 #include "mongo/unittest/unittest.h"
 
+#include <boost/ref.hpp>
+#include <boost/thread/thread.hpp>
+
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/partitioned_counter.h"
 #include "mongo/util/log.h"
@@ -101,6 +104,32 @@ namespace {
     TEST(PartitionedCounterTest, DecrementUnsignedUnderflow) {
         PartitionedCounter<unsigned> pc(3);
         ASSERT_THROWS(pc -= 4, MsgAssertionException);
+    }
+
+    static void incThread(int n, PartitionedCounter<int>& pc, volatile bool& running) {
+        for (int i = 0; i < n; ++i) {
+            ++pc;
+        }
+        while (running) {
+            sleepmillis(1);
+        }
+    }
+
+    TEST(PartitionedCounterTest, Threading) {
+        static const int NTHREADS = 10;
+        static const int NINCS = 100000;
+        boost::thread_group group;
+        PartitionedCounter<int> pc;
+        volatile bool running = true;
+        for (int i = 0; i < 10; ++i) {
+            group.add_thread(new boost::thread(incThread, NINCS, boost::ref(pc), boost::ref(running)));
+        }
+        while (pc != NTHREADS * NINCS) {
+            sleepmillis(1);
+        }
+        running = false;
+        group.join_all();
+        ASSERT_EQUALS(pc, NTHREADS * NINCS);
     }
 
 } // namespace
