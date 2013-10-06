@@ -56,11 +56,11 @@ namespace mongo {
     template<typename Value>
     class PartitionedCounter : boost::noncopyable {
       public:
-        PartitionedCounter();
+        PartitionedCounter(Value init=0);
         ~PartitionedCounter();
 
-        PartitionedCounter& inc(Value);
-        PartitionedCounter& dec(Value);
+        PartitionedCounter& inc(Value x=1);
+        PartitionedCounter& dec(Value x=1);
 
         Value get() const;
 
@@ -69,8 +69,8 @@ namespace mongo {
         operator Value() const { return get(); }
 
         // prefix
-        PartitionedCounter& operator++(int) { return inc(1); }
-        PartitionedCounter& operator--(int) { return dec(1); }
+        PartitionedCounter& operator++() { return inc(1); }
+        PartitionedCounter& operator--() { return dec(1); }
 
         // maybe TODO: postfix (can't do because we'd need to copy the partitioned counter)
         //Value operator++(Value) { Value x = get(); inc(1); return x; }
@@ -119,7 +119,7 @@ namespace mongo {
     }
 
     template<typename Value>
-    PartitionedCounter<Value>::PartitionedCounter() : _sumOfDead(0), _mutex("PartitionedCounter") {}
+    PartitionedCounter<Value>::PartitionedCounter(Value init) : _sumOfDead(init), _mutex("PartitionedCounter") {}
 
     template<typename Value>
     PartitionedCounter<Value>::~PartitionedCounter() {
