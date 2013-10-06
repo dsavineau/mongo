@@ -20,6 +20,7 @@
 #include <boost/ref.hpp>
 #include <boost/thread/thread.hpp>
 
+#include "mongo/platform/atomic_word.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/partitioned_counter.h"
 #include "mongo/util/log.h"
@@ -132,6 +133,47 @@ namespace {
         ASSERT_EQUALS(pc, NTHREADS * NINCS);
         ++pc;
         ASSERT_EQUALS(pc, NTHREADS * NINCS + 1);
+    }
+
+    // just adds the api that counterThread will use on top of AtomicWord
+    template<typename WordType>
+    class AtomicWordCounter : public AtomicWord<WordType> {
+      public:
+        AtomicWordCounter() : AtomicWord<WordType>() {}
+        AtomicWordCounter& operator++() { AtomicWord<WordType>::addAndFetch(1); return *this; }
+        operator WordType() const { return AtomicWord<WordType>::load(); }
+    };
+
+    template<class Counter>
+    static void counterThread(int n, Counter& c) {
+        for (int i = 0; i < n; ++i) {
+            ++c;
+        }
+    }
+
+    template<class Counter>
+    static unsigned long long timeit(int nthreads) {
+        static const int NINCS = 10000000;
+        boost::thread_group group;
+        Counter c;
+        Timer t;
+        for (int i = 0; i < nthreads; ++i) {
+            group.add_thread(new boost::thread(counterThread<Counter>, NINCS, boost::ref(c)));
+        }
+        group.join_all();
+        ASSERT_EQUALS(c, NINCS * nthreads);
+        return t.micros();
+    }
+
+    TEST(PartitionedCounterTest, Timing) {
+        for (int nthreads = 1; nthreads <= 1<<10; nthreads <<= 1) {
+            unsigned long long atomic = timeit<AtomicWordCounter<uint64_t> >(nthreads);
+            unsigned long long partitioned = timeit<PartitionedCounter<uint64_t> >(nthreads);
+            LOG(0) << nthreads << " threads" << endl
+                   << "  atomic:      " << atomic << endl
+                   << "  partitioned: " << partitioned << endl;
+            //ASSERT_LESS_THAN(partitioned, atomic);
+        }
     }
 
 } // namespace
