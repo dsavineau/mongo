@@ -123,7 +123,6 @@ namespace mongo {
 
     template<typename Value>
     PartitionedCounter<Value>::~PartitionedCounter() {
-        SimpleMutex::scoped_lock lk(_mutex);
         for (states_iterator it = _threadStates.begin(); it != _threadStates.end(); ++it) {
             ThreadStatePtr *tspp = *it;
             // Prevent recursive lock and modification of _threadStates while we're iterating, we
