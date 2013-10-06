@@ -106,6 +106,13 @@ namespace mongo {
         if (_pc != NULL) {
             SimpleMutex::scoped_lock lk(_pc->_mutex);
             _pc->_sumOfDead += _sum;
+            for (states_iterator it = _pc->_threadStates.begin(); it != _pc->_threadStates.end(); ++it) {
+                ThreadStatePtr *tspp = it;
+                if (tspp->get() == this) {
+                    _pc->_threadStates.erase(it);
+                    break;
+                }
+            }
         }
     }
 
@@ -117,12 +124,11 @@ namespace mongo {
         SimpleMutex::scoped_lock lk(_mutex);
         for (states_iterator it = _threadStates.begin(); it != _threadStates.end(); ++it) {
             ThreadStatePtr *tspp = *it;
-            if (tspp->get() != NULL) {
-                // Prevent recursive lock, we don't care about incrementing _sumOfDead because this
-                // pc is dying anyway, but we do need to delete all the corresponding ThreadStates.
-                (*tspp)->_pc = NULL;
-                tspp->reset();
-            }
+            // Prevent recursive lock and modification of _threadStates while we're iterating, we
+            // don't care about incrementing _sumOfDead because this pc is dying anyway, but we do
+            // need to delete all the corresponding ThreadStates.
+            (*tspp)->_pc = NULL;
+            tspp->reset();
         }
     }
 
@@ -145,15 +151,9 @@ namespace mongo {
     Value PartitionedCounter<Value>::get() const {
         SimpleMutex::scoped_lock lk(_mutex);
         Value sum = _sumOfDead;
-        for (states_iterator it = _threadStates.begin(); it != _threadStates.end(); ) {
+        for (states_iterator it = _threadStates.begin(); it != _threadStates.end(); ++it) {
             ThreadStatePtr *tspp = *it;
-            if (tspp->get() == NULL) {
-                // opportunistically clean up the list
-                it = _threadStates.erase(it);
-            } else {
-                sum += (*tspp)->_sum;
-                ++it;
-            }
+            sum += (*tspp)->_sum;
         }
         return sum;
     }
