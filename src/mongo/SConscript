@@ -47,7 +47,6 @@ def add_exe( v ):
 env.StaticLibrary('foundation',
                   [ 'util/assert_util.cpp',
                     'util/concurrency/mutexdebugger.cpp',
-                    'util/concurrency/partitioned_counter.cpp',
                     'util/debug_util.cpp',
                     'util/log.cpp',
                     'util/signal_handlers.cpp',

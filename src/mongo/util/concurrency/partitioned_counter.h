@@ -31,8 +31,6 @@ namespace mongo {
     using boost::thread_specific_ptr;
     using std::list;
 
-    extern SimpleMutex pcMutex;
-
     /**
      * PartitionedCounter is a number that can be incremented, decremented, and read.
      *
@@ -94,6 +92,7 @@ namespace mongo {
         ThreadState& ts();
 
         Value _sumOfDead;
+        SimpleMutex _mutex;
         ThreadStatePtr _ts;
         mutable list<ThreadStatePtr *> _threadStates;
         typedef typename list<ThreadStatePtr *>::iterator states_iterator;
@@ -105,17 +104,17 @@ namespace mongo {
     template<typename Value>
     PartitionedCounter<Value>::ThreadState::~ThreadState() {
         if (_pc != NULL) {
-            SimpleMutex::scoped_lock lk(pcMutex);
+            SimpleMutex::scoped_lock lk(_pc->_mutex);
             _pc->_sumOfDead += _sum;
         }
     }
 
     template<typename Value>
-    PartitionedCounter<Value>::PartitionedCounter() : _sumOfDead(0) {}
+    PartitionedCounter<Value>::PartitionedCounter() : _sumOfDead(0), _mutex("PartitionedCounter") {}
 
     template<typename Value>
     PartitionedCounter<Value>::~PartitionedCounter() {
-        SimpleMutex::scoped_lock lk(pcMutex);
+        SimpleMutex::scoped_lock lk(_mutex);
         for (states_iterator it = _threadStates.begin(); it != _threadStates.end(); ++it) {
             ThreadStatePtr *tspp = *it;
             if (tspp->get() != NULL) {
@@ -144,7 +143,7 @@ namespace mongo {
 
     template<typename Value>
     Value PartitionedCounter<Value>::get() const {
-        SimpleMutex::scoped_lock lk(pcMutex);
+        SimpleMutex::scoped_lock lk(_mutex);
         Value sum = _sumOfDead;
         for (states_iterator it = _threadStates.begin(); it != _threadStates.end(); ) {
             ThreadStatePtr *tspp = *it;
@@ -163,7 +162,7 @@ namespace mongo {
     typename PartitionedCounter<Value>::ThreadState& PartitionedCounter<Value>::ts() {
         if (_ts.get() == NULL) {
             _ts.reset(new ThreadState(this));
-            SimpleMutex::scoped_lock lk(pcMutex);
+            SimpleMutex::scoped_lock lk(_mutex);
             _threadStates.push_back(&_ts);
         }
         return *_ts;
