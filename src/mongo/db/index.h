@@ -34,6 +34,8 @@
 #include "mongo/db/storage/key.h"
 #include "mongo/db/storage/txn.h"
 
+#include "mongo/util/concurrency/partitioned_counter.h"
+
 namespace mongo {
 
     class Cursor; 
@@ -221,7 +223,8 @@ namespace mongo {
             CacheLineWord nscanned;
             CacheLineWord nscannedObjects;
             CacheLineWord inserts;
-            CacheLineWord deletes;
+            //CacheLineWord deletes;
+            PartitionedCounter<uint64_t> deletes;
             // Not sure how to capture updates just yet
             //CacheLineWord updates;
         };
@@ -240,7 +243,7 @@ namespace mongo {
             _accessStats.inserts.fetchAndAdd(1);
         }
         void noteDelete() const {
-            _accessStats.deletes.fetchAndAdd(1);
+            _accessStats.deletes++;
         }
 
         class Cursor : public storage::Cursor {
@@ -330,8 +333,8 @@ namespace mongo {
         uint64_t getInsertCount() const {
             return _accessStats.inserts.load();
         }
-        uint64_t getDeleleCount() const {
-            return _accessStats.deletes.load();
+        uint64_t getDeleteCount() const {
+            return _accessStats.deletes;
         }
     private:
         string _name;
