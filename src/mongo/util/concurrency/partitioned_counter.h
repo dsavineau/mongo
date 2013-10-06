@@ -107,7 +107,7 @@ namespace mongo {
             SimpleMutex::scoped_lock lk(_pc->_mutex);
             _pc->_sumOfDead += _sum;
             for (states_iterator it = _pc->_threadStates.begin(); it != _pc->_threadStates.end(); ++it) {
-                ThreadStatePtr *tspp = it;
+                ThreadStatePtr *tspp = *it;
                 if (tspp->get() == this) {
                     _pc->_threadStates.erase(it);
                     break;
