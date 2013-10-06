@@ -170,10 +170,14 @@ namespace {
         for (int nthreads = 1; nthreads <= 1<<10; nthreads <<= 1) {
             unsigned long long atomic = timeit<AtomicWordCounter<uint64_t> >(nthreads);
             unsigned long long partitioned = timeit<PartitionedCounter<uint64_t> >(nthreads);
-            LOG(0) << nthreads << " threads" << endl
+            LOG(1) << nthreads << " threads" << endl
                    << "  atomic:      " << atomic << endl
                    << "  partitioned: " << partitioned << endl;
-            //ASSERT_LESS_THAN(partitioned, atomic);
+#if !_DEBUG
+            if (nthreads > 1) {
+                ASSERT_LESS_THAN(partitioned, atomic);
+            }
+#endif
         }
     }
 
