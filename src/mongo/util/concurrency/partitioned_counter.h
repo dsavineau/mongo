@@ -47,6 +47,11 @@ namespace mongo {
      *   - There is no global cleanup like partitioned_counters_destroy, if there are global objects
      *     they get destructed just like everything else.  This is possible because there is no
      *     global state.
+     *   - This implementation is expected to be slower.  boost::thread_specific_ptr is known to be
+     *     slow, but in the original implementation we rolled our own pthread keys, so maybe this
+     *     isn't so bad.  The linked list removal on thread destruction is slower because the
+     *     element doesn't know where in the list it is.  This could be made better if it is shown
+     *     to stall other threads.
      */
     template<typename Value>
     class PartitionedCounter : boost::noncopyable {
