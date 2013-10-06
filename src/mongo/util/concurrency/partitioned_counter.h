@@ -20,6 +20,7 @@
 #include "mongo/pch.h"
 
 #include <limits>
+#include <list>
 #include <boost/thread/tss.hpp>
 
 #include "mongo/util/assert_util.h"
@@ -28,6 +29,7 @@
 namespace mongo {
 
     using boost::thread_specific_ptr;
+    using std::list;
 
     extern SimpleMutex pcMutex;
 
@@ -79,10 +81,10 @@ namespace mongo {
 
       private:
         class ThreadState : boost::noncopyable {
-            const PartitionedCounter *_pc;
+            PartitionedCounter *_pc;
             Value _sum;
           public:
-            ThreadState(const PartitionedCounter *);
+            ThreadState(PartitionedCounter *);
             ~ThreadState();
             friend class PartitionedCounter;
         };
@@ -98,7 +100,7 @@ namespace mongo {
     };
 
     template<typename Value>
-    PartitionedCounter<Value>::ThreadState::ThreadState(const PartitionedCounter *pc) : _pc(pc), _sum(0) {}
+    PartitionedCounter<Value>::ThreadState::ThreadState(PartitionedCounter *pc) : _pc(pc), _sum(0) {}
 
     template<typename Value>
     PartitionedCounter<Value>::ThreadState::~ThreadState() {

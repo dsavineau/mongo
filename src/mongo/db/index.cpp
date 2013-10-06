@@ -476,7 +476,7 @@ namespace mongo {
         b.appendNumber("nscanned", _accessStats.nscanned.load());
         b.appendNumber("nscannedObjects", _accessStats.nscannedObjects.load());
         b.appendNumber("inserts", _accessStats.inserts.load());
-        b.appendNumber("deletes", _accessStats.deletes.load());
+        b.appendNumber("deletes", (uint64_t) _accessStats.deletes);
         return b.obj();
         // TODO: (Zardosht) Need to figure out how to display these dates
         /*
