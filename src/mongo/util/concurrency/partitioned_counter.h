@@ -44,12 +44,9 @@ namespace mongo {
      *
      *   - Signed or unsigned types are supported, because it's templated.
      *   - Decrement is supported, and if Value is an unsigned type, decrements check for underflow.
-     *   - This implementation is sloppier about memory management.  When a thread dies, it does not
-     *     clean up the pointer to itself in the owning PartitionedCounter, rather that
-     *     PartitionedCounter will notice that the pointer is NULL and lazily clean up.  This is a
-     *     big complexity win.
      *   - There is no global cleanup like partitioned_counters_destroy, if there are global objects
-     *     they get destructed just like everything else.
+     *     they get destructed just like everything else.  This is possible because there is no
+     *     global state.
      */
     template<typename Value>
     class PartitionedCounter : boost::noncopyable {
