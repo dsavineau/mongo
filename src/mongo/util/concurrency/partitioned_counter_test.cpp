@@ -34,7 +34,7 @@ namespace {
         PartitionedCounter<int> pc1;
         ASSERT_EQUALS(pc1, 0);
         PartitionedCounter<unsigned> pc2;
-        ASSERT_EQUALS(pc2.get(), 0);
+        ASSERT_EQUALS(pc2.get(), 0U);
     }
 
     TEST(PartitionedCounterTest, CreateWithArg) {
