@@ -17,6 +17,7 @@
 
 #include "mongo/unittest/unittest.h"
 
+#include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/partitioned_counter.h"
 #include "mongo/util/log.h"
 #include "mongo/util/timer.h"
@@ -95,6 +96,11 @@ namespace {
             ASSERT_EQUALS(pc, i);
             ASSERT_EQUALS(pc -= 3, i -= 3);
         }
+    }
+
+    TEST(PartitionedCounterTest, DecrementUnsignedUnderflow) {
+        PartitionedCounter<unsigned> pc(3);
+        ASSERT_THROWS(pc -= 4, MsgAssertionException);
     }
 
 } // namespace
