@@ -134,21 +134,6 @@ namespace mongo {
     }
 
     template<typename Value>
-    PartitionedCounter<Value>& PartitionedCounter<Value>::inc(Value x) {
-        ts()._sum += x;
-        return *this;
-    }
-
-    template<typename Value>
-    PartitionedCounter<Value>& PartitionedCounter<Value>::dec(Value x) {
-        if (!std::numeric_limits<Value>::is_signed) {
-            massert(17019, "cannot decrement partitioned counter below zero", ts()._sum > x);
-        }
-        ts()._sum -= x;
-        return *this;
-    }
-
-    template<typename Value>
     Value PartitionedCounter<Value>::get() const {
         SimpleMutex::scoped_lock lk(_mutex);
         Value sum = _sumOfDead;
@@ -167,6 +152,21 @@ namespace mongo {
             _threadStates.push_back(&_ts);
         }
         return *_ts;
+    }
+
+    template<typename Value>
+    PartitionedCounter<Value>& PartitionedCounter<Value>::inc(Value x) {
+        ts()._sum += x;
+        return *this;
+    }
+
+    template<typename Value>
+    PartitionedCounter<Value>& PartitionedCounter<Value>::dec(Value x) {
+        if (!std::numeric_limits<Value>::is_signed) {
+            massert(17019, "cannot decrement partitioned counter below zero", ts()._sum > x);
+        }
+        ts()._sum -= x;
+        return *this;
     }
 
 } // namespace mongo
