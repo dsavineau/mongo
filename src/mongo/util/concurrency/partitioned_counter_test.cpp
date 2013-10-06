@@ -145,23 +145,24 @@ namespace {
     };
 
     template<class Counter>
-    static void counterThread(int n, Counter& c) {
-        for (int i = 0; i < n; ++i) {
+    static void counterThread(size_t n, Counter& c) {
+        for (size_t i = 0; i < n; ++i) {
             ++c;
         }
     }
 
     template<class Counter>
     static unsigned long long timeit(int nthreads) {
-        static const int NINCS = 10000000;
+        static const size_t NINCS = 2<<48;
+        const size_t incsPerThread = NINCS / nthreads;
         boost::thread_group group;
         Counter c;
         Timer t;
         for (int i = 0; i < nthreads; ++i) {
-            group.add_thread(new boost::thread(counterThread<Counter>, NINCS, boost::ref(c)));
+            group.add_thread(new boost::thread(counterThread<Counter>, incsPerThread, boost::ref(c)));
         }
         group.join_all();
-        ASSERT_EQUALS(c, NINCS * nthreads);
+        ASSERT_EQUALS(c, incsPerThread * nthreads);
         return t.micros();
     }
 
