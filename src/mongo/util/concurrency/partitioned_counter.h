@@ -92,7 +92,7 @@ namespace mongo {
             char _pad[64 - sizeof(ThreadStateData)];
           public:
             ThreadState(PartitionedCounter *pc) : ThreadStateData(pc) {}
-	};
+        };
         friend class ThreadStateData;
 
         ThreadState& ts();
