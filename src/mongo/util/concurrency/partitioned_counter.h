@@ -80,15 +80,20 @@ namespace mongo {
         PartitionedCounter& operator-=(Value x) { return dec(x); }
 
       private:
-        class ThreadState : boost::noncopyable {
+        class ThreadStateData : boost::noncopyable {
             PartitionedCounter *_pc;
             Value _sum;
           public:
-            ThreadState(PartitionedCounter *);
-            ~ThreadState();
+            ThreadStateData(PartitionedCounter *);
+            ~ThreadStateData();
             friend class PartitionedCounter;
         };
-        friend class ThreadState;
+        class ThreadState : public ThreadStateData {
+            char _pad[64 - sizeof(ThreadStateData)];
+          public:
+            ThreadState(PartitionedCounter *pc) : ThreadStateData(pc) {}
+	};
+        friend class ThreadStateData;
 
         ThreadState& ts();
 
@@ -100,10 +105,10 @@ namespace mongo {
     };
 
     template<typename Value>
-    PartitionedCounter<Value>::ThreadState::ThreadState(PartitionedCounter *pc) : _pc(pc), _sum(0) {}
+    PartitionedCounter<Value>::ThreadStateData::ThreadStateData(PartitionedCounter *pc) : _pc(pc), _sum(0) {}
 
     template<typename Value>
-    PartitionedCounter<Value>::ThreadState::~ThreadState() {
+    PartitionedCounter<Value>::ThreadStateData::~ThreadStateData() {
         if (_pc != NULL) {
             SimpleMutex::scoped_lock lk(_pc->_mutex);
             _pc->_sumOfDead += _sum;
