@@ -123,6 +123,9 @@ namespace mongo {
 
     template<typename Value>
     PartitionedCounter<Value>::~PartitionedCounter() {
+        // We need this lock to protect against the race between a terminating thread in
+        // ~ThreadState, and us.
+        SimpleMutex::scoped_lock lk(_mutex);
         for (states_iterator it = _threadStates.begin(); it != _threadStates.end(); ++it) {
             ThreadStatePtr *tspp = *it;
             // Prevent recursive lock and modification of _threadStates while we're iterating, we
