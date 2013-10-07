@@ -80,7 +80,7 @@ namespace mongo {
     };
 }
 
-#elif( BOOST_VERSION < 103500 ) 
+#else //#elif( BOOST_VERSION < 103500 ) 
 
 # if !defined(BOOST_VERSION)
 #  error BOOST_VERSION is not defined 
@@ -142,7 +142,8 @@ namespace mongo {
     };
 }
 
-#else
+#endif
+#if 0 //#else
 
 // Boost version
 
